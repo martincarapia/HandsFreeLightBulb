@@ -1,12 +1,12 @@
 from PyP100 import PyL530
 
-ip_address = "10.3.113.67"
+ip_address = "YOURIPADRESS"
 light_info = {
-    "username": "martin.carapia@outlook.com",
-    "password": "gk6qmpp9"
+    "username": "YOUREMAIL",
+    "password": "YOURPASSWORD"
 }
 
-l530 = PyL530.L530("10.3.113.67", light_info["username"], light_info["password"])
+l530 = PyL530.L530(ip_address, light_info["username"], light_info["password"])
 
 l530.turnOff()
 
