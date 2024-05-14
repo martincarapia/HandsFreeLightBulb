@@ -1,5 +1,4 @@
 CMakeLists.txt.user
-CMakeLists.txt
 CMakeCache.txt
 CMakeFiles
 CMakeScripts
@@ -8,6 +7,8 @@ Makefile
 install_manifest.txt
 compile_commands.json
 *.cmake
+!pico_sdk_import.cmake
 _deps
 test.c
 /build/
+/.vscode
