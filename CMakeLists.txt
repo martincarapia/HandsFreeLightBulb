@@ -10,14 +10,14 @@ project(my_project)
 pico_sdk_init()
 
 add_executable(ultrasonic
-        ultrasonic.c
-        )
+ultrasonic.c
+)
 
 target_link_libraries(ultrasonic
         pico_stdlib
-        pico_cyw43_arch_none
         hardware_gpio
         hardware_timer
+        pico_cyw43_arch_none
         )
 
 # Enable USB output
@@ -26,20 +26,3 @@ pico_enable_stdio_uart(ultrasonic 0)
 
 # create map/bin/hex file etc.
 pico_add_extra_outputs(ultrasonic)
-
-
-# rest of your project
-# add_executable(ultrasonic
-# ultrasonic.c
-# )
-# 
-# # Add pico_stdlib library which aggregates commonly used features
-# target_link_libraries(ultrasonic
-#     pico_stdlib
-#     pico_cyw43_arch_none
-#     hardware_gpio
-#     hardware_timer
-#     )
-# 
-# # create map/bin/hex/uf2 file in addition to ELF.
-# pico_add_extra_outputs(ultrasonic)
