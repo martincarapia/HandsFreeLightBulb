@@ -64,18 +64,6 @@ uint32_t getDistanceTimestamp(int givenSensor[])
         return 0;
     }
 }
-/*! \brief Method for measuring distance off a specified sensor
- *  \param givenSensor An ultrasonic sensor. index 0 is the trigger pin and 1 is the echo pin
- *  \return Returns read distance from a sensor
- */
-uint32_t measureDistance(int givenSensor[])
-{
-    float distance = readDistance(givenSensor);
-
-    printf("Distance of Pin %d: %.2f cm\n", givenSensor[0], distance);
-
-    return distance;
-}
 
 
 void init_all(){
