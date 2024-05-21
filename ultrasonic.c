@@ -72,29 +72,29 @@ int main()
 {
     // Setup code
     init_all();
-    
+
     while (true)
     {
         float sensorZeroCurrent = readDistance(sensorZero);
         sleep_ms(50);  // Slight delay to avoid sensor interference
         float sensorOneCurrent = readDistance(sensorOne);
 
-        if(sensorZeroCurrent < thresholdInCentimeters && sequence[0] != '1'){
+        if(sensorZeroCurrent < thresholdInCentimeters && sequence[0] != '0'){
+            strcat(sequence, "0");
+        } else if(sensorOneCurrent < thresholdInCentimeters && sequence[0] != '1'){
             strcat(sequence, "1");
-        } else if(sensorOneCurrent < thresholdInCentimeters && sequence[0] != '2'){
-            strcat(sequence, "2");
         }
-        if(strcmp(sequence, "12") == 0) {
+        if(strcmp(sequence, "01") == 0) {
             currentPeople++;
             sequence[0] = '\0'; // Reset sequence
             sleep_ms(550);
-        } else if(strcmp(sequence, "21") == 0) {
+        } else if(strcmp(sequence, "10") == 0) {
             currentPeople--;
             sequence[0] = '\0'; // Reset sequence
             sleep_ms(550);
         }
         // Resets the sequence if it is invalid or timeouts
-        if(strlen(sequence) > 2 || strcmp(sequence, "11") == 0 || strcmp(sequence, "22") == 0 || timeoutCounter > timeoutBailCount) {
+        if(strlen(sequence) > 2 || strcmp(sequence, "11") == 0 || strcmp(sequence, "00") == 0 || timeoutCounter > timeoutBailCount) {
             sequence[0] = '\0'; // Reset sequence
         }
 
