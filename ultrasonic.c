@@ -5,13 +5,20 @@
 #include "hardware/gpio.h"
 #include "hardware/timer.h"
 
-#define distanceSensitivityInCentimeters 250.0f
 
-// [0] = Trigger pin [1] = Echo pin
+// [0] = Trigger pin [1] = Echo pin 
 int sensorZero[] =  {4, 5};
 int sensorOne[] = {14, 15};
-char sequence[3];
+/* Sequence of numbers. 1 means zero was tripped first. 2 means one was tripped first.*/
+char sequence[3] = "";  // Ensure sequence is initialized
+/* Counter for tracking timeout */
 int timeoutCounter = 0;
+/* Threshold in centimeters. If the distance is less or equal to this than it's considered tripped.*/
+int thresholdInCentimeters = 150;
+/* Timeout bail count. If the counter goes above this sequence is reset.*/
+int timeoutBailCount = 50;
+/* Count of people in the room.*/
+int currentPeople = 0;
 
 /*! \brief Send trigger to given Pin
  *  \param givenSensor An ultrasonic sensor. index 0 is the trigger pin and 1 is the echo pin
@@ -32,7 +39,7 @@ void sendTrigger(int givenSensor[])
 float readDistance(int givenSensor[])
 {
     sendTrigger(givenSensor);
-    uint32_t signalOff, signalOn;
+    uint32_t signalOff = 0, signalOn = 0;
 
     while (gpio_get(givenSensor[1]) == 0) {
         signalOff = time_us_32();
@@ -41,31 +48,10 @@ float readDistance(int givenSensor[])
         signalOn = time_us_32();
     }
 
-    float distance = ((signalOn - signalOff) * 0.0343) / 2;
+    float distance = ((signalOn - signalOff) * 0.0343f) / 2.0f;
     return distance;
 }
-
-/*! \brief Method for grabbing the timestamp of a sensor that tripped within threshold
- *  \param givenSensor An ultrasonic sensor. index 0 is the trigger pin and 1 is the echo pin
- *  \return Returns timestamp if distance is less than threshold. Returns 0 if farther than a pre-defined threshold
- */
-uint32_t getDistanceTimestamp(int givenSensor[])
-{
-    float distance = readDistance(givenSensor);
-
-    printf("Distance of Pin %d: %.2f cm\n", givenSensor[0], distance);
-
-    if (distance < distanceSensitivityInCentimeters)
-    {
-        return time_us_32();
-    }
-    else
-    {
-        return 0;
-    }
-}
-
-
+/*! \brief Initialize everything needed */
 void init_all(){
     stdio_init_all();
     cyw43_arch_init();
@@ -81,53 +67,53 @@ void init_all(){
     gpio_init(sensorOne[1]);
     gpio_set_dir(sensorOne[1], GPIO_IN);
 }
+
 int main()
 {
     // Setup code
     init_all();
-    int currentPeople = 0;
-    // Grab the initial distance
-    // printf("Sensor0 Init");
-    float sensorZeroInitial = readDistance(sensorZero);
-    // printf("Sensor1 Init");
-    float sensorOneInitial = readDistance(sensorOne);
+    
     while (true)
     {
-        uint32_t sensorZeroCurrent = readDistance(sensorZero);
+        float sensorZeroCurrent = readDistance(sensorZero);
         sleep_ms(50);  // Slight delay to avoid sensor interference
-        uint32_t sensorOneCurrent = readDistance(sensorOne);
+        float sensorOneCurrent = readDistance(sensorOne);
 
-        if(sensorZeroCurrent < sensorZeroInitial - 30 && sequence[0] != '1'){
+        if(sensorZeroCurrent < thresholdInCentimeters && sequence[0] != '1'){
             strcat(sequence, "1");
-        } else if(sensorOneCurrent < sensorOneInitial - 30 && sequence[0] != '2'){
+        } else if(sensorOneCurrent < thresholdInCentimeters && sequence[0] != '2'){
             strcat(sequence, "2");
         }
         if(strcmp(sequence, "12") == 0) {
             currentPeople++;
             sequence[0] = '\0'; // Reset sequence
             sleep_ms(550);
-        } else if(strcmp(sequence, "21") == 0 && currentPeople > 0) {
+        } else if(strcmp(sequence, "21") == 0) {
             currentPeople--;
             sequence[0] = '\0'; // Reset sequence
             sleep_ms(550);
         }
         // Resets the sequence if it is invalid or timeouts
-        if(strlen(sequence) > 2 || strcmp(sequence, "11") == 0 || strcmp(sequence, "22") == 0 || timeoutCounter > 200) {
+        if(strlen(sequence) > 2 || strcmp(sequence, "11") == 0 || strcmp(sequence, "22") == 0 || timeoutCounter > timeoutBailCount) {
             sequence[0] = '\0'; // Reset sequence
         }
 
         // Check the sequence length for timeout logic
         if(strlen(sequence) == 1) {
             timeoutCounter++;
-        } else {
+        } else{
             timeoutCounter = 0;
         }
 
         if (currentPeople > 0){
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
-        } else {
+        } else if(currentPeople < 0){
+            currentPeople = 0;
+        } else{
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
         }
+        printf("Seq: %c %c ", sequence[0], sequence[1]);
+        printf("Sensor0: %f Sensor1: %f ", sensorZeroCurrent, sensorOneCurrent); 
         printf("Current people: %d\n", currentPeople);
     }
 
