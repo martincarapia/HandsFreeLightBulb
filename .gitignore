@@ -9,6 +9,6 @@ compile_commands.json
 *.cmake
 !pico_sdk_import.cmake
 _deps
-test.c
+.DS_Store
 /build/
 /.vscode
