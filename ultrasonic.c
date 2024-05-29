@@ -201,7 +201,7 @@ int main()
             timeoutCounter = 0;
         }
         printf("Seq: %c %c ", sequence[0], sequence[1]);
-        printf("Sensor0: %f Sensor1: %f ", sensorZeroCurrent, sensorOneCurrent); 
+        printf("Sensor0: %f Sensor1: %f\n", sensorZeroCurrent, sensorOneCurrent); 
     }
 
     return 0;
