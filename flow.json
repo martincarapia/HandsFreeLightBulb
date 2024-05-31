@@ -1,6 +1,6 @@
 [
     {
-        "id": "883e97c41c0cdcc7",
+        "id": "95706cf99c05862b",
         "type": "tab",
         "label": "Light control flow",
         "disabled": false,
@@ -8,9 +8,9 @@
         "env": []
     },
     {
-        "id": "91714d32bf392b67",
+        "id": "31d32accc147f020",
         "type": "mqtt in",
-        "z": "883e97c41c0cdcc7",
+        "z": "95706cf99c05862b",
         "name": "",
         "topic": "/lightcontrol",
         "qos": "0",
@@ -23,14 +23,14 @@
         "y": 280,
         "wires": [
             [
-                "update_variable"
+                "2f472b1e970888c6"
             ]
         ]
     },
     {
-        "id": "update_variable",
+        "id": "2f472b1e970888c6",
         "type": "function",
-        "z": "883e97c41c0cdcc7",
+        "z": "95706cf99c05862b",
         "name": "update count people",
         "func": "// Get the current value of the flow variable\nlet currentValue = flow.get('myVar') || 0;\n\n// Add the received value (assumes msg.payload is either 1 or -1)\ncurrentValue += msg.payload;\n\n\n// Set the updated value in msg.payload for further processing\nif(currentValue < 0){\n    currentValue = 0;\n}\n\n// Store the updated value back in the flow variable\nflow.set('myVar', currentValue);\n\nmsg.payload = currentValue;\n\nreturn msg;",
         "outputs": 1,
@@ -43,15 +43,15 @@
         "y": 280,
         "wires": [
             [
-                "5d250f6944ea9b14",
-                "act_on_variable"
+                "83113ee5ed4e07d5",
+                "dc6d03ae30251515"
             ]
         ]
     },
     {
-        "id": "5d250f6944ea9b14",
+        "id": "83113ee5ed4e07d5",
         "type": "debug",
-        "z": "883e97c41c0cdcc7",
+        "z": "95706cf99c05862b",
         "name": "Debug",
         "active": true,
         "tosidebar": true,
@@ -64,9 +64,9 @@
         "wires": []
     },
     {
-        "id": "act_on_variable",
+        "id": "dc6d03ae30251515",
         "type": "function",
-        "z": "883e97c41c0cdcc7",
+        "z": "95706cf99c05862b",
         "name": "Act on Variable",
         "func": "// Act based on the updated variable\nif (msg.payload > 0) {\n    // Do something if the variable is greater than 0\n    node.send([{payload: 'Variable is positive'}, null]);\n} else if (msg.payload == 0) {\n    // Do something if the variable is less than 0\n    node.send([null, {payload: 'Variable is zero'}]);\n} else {\n    // Do something if the variable is zero\n    node.send([null, null]);\n}",
         "outputs": 2,
@@ -79,17 +79,17 @@
         "y": 380,
         "wires": [
             [
-                "5a940256d8917b30"
+                "90b9c2dfec0fdffa"
             ],
             [
-                "37afc4a7eeac796c"
+                "0a9373b2f34ff16f"
             ]
         ]
     },
     {
-        "id": "5a940256d8917b30",
+        "id": "90b9c2dfec0fdffa",
         "type": "tapo_new_actions",
-        "z": "883e97c41c0cdcc7",
+        "z": "95706cf99c05862b",
         "name": "Turn on",
         "deviceIp": "10.3.115.177",
         "deviceAlias": "",
@@ -104,9 +104,9 @@
         ]
     },
     {
-        "id": "37afc4a7eeac796c",
+        "id": "0a9373b2f34ff16f",
         "type": "tapo_new_actions",
-        "z": "883e97c41c0cdcc7",
+        "z": "95706cf99c05862b",
         "name": "Turn off",
         "deviceIp": "10.3.115.177",
         "deviceAlias": "",
@@ -121,68 +121,24 @@
         ]
     },
     {
-        "id": "8c9b3a2753dbb6a9",
-        "type": "mqtt in",
-        "z": "883e97c41c0cdcc7",
-        "name": "",
-        "topic": "/led",
-        "qos": "2",
-        "datatype": "auto-detect",
-        "broker": "mqtt_broker",
-        "nl": false,
-        "rap": true,
-        "rh": 0,
-        "inputs": 0,
-        "x": 320,
-        "y": 540,
-        "wires": [
-            [
-                "903928113b10faa2"
-            ]
-        ]
-    },
-    {
-        "id": "903928113b10faa2",
-        "type": "debug",
-        "z": "883e97c41c0cdcc7",
-        "name": "debug 5",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 460,
-        "y": 540,
-        "wires": []
-    },
-    {
         "id": "mqtt_broker",
         "type": "mqtt-broker",
         "name": "Local Mosquitto Broker",
         "broker": "localhost",
         "port": "1883",
         "clientid": "",
-        "autoConnect": true,
         "usetls": false,
-        "protocolVersion": "4",
+        "compatmode": true,
         "keepalive": "60",
         "cleansession": true,
-        "autoUnsubscribe": true,
         "birthTopic": "",
         "birthQos": "0",
         "birthPayload": "",
-        "birthMsg": {},
         "closeTopic": "",
         "closeQos": "0",
         "closePayload": "",
-        "closeMsg": {},
         "willTopic": "",
         "willQos": "0",
-        "willPayload": "",
-        "willMsg": {},
-        "userProps": "",
-        "sessionExpiry": ""
+        "willPayload": ""
     }
 ]
