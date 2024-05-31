@@ -24,8 +24,6 @@ int timeoutCounter = 0;
 int thresholdInCentimeters = 150;
 /* Timeout bail count. If the counter goes above this sequence is reset.*/
 int timeoutBailCount = 50;
-/* Count of people in the room.*/
-int currentPeople = 0;
 
 /*! \brief Send trigger to given Pin
  *  \param givenSensor An ultrasonic sensor. index 0 is the trigger pin and 1 is the echo pin
@@ -83,9 +81,6 @@ typedef struct {
 
 MQTT_CLIENT_DATA_T *mqtt;
 
-
-
-
 void publish_count(int given_val) {
     //Publish value based on passed param
     char temp_str[16];
@@ -99,15 +94,6 @@ static void mqtt_incoming_data_cb(void *arg, const u8_t *data, u16_t len, u8_t f
     mqtt_client->data[len] = '\0';
     printf("Topic: %s, Message: %s\n", mqtt_client->topic, mqtt_client->data);
 
-
-    if (strcmp(mqtt->topic, "/led") == 0)
-    {
-        if (strcmp((const char *)mqtt_client->data, "On") == 0)
-            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
-        else if  (strcmp((const char *)mqtt_client->data, "Off") == 0)
-            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
-    }
-
 }
 
 static void mqtt_incoming_publish_cb(void *arg, const char *topic, u32_t tot_len) {
@@ -117,10 +103,6 @@ static void mqtt_incoming_publish_cb(void *arg, const char *topic, u32_t tot_len
 
 static void mqtt_connection_cb(mqtt_client_t *client, void *arg, mqtt_connection_status_t status) {
     MQTT_CLIENT_DATA_T* mqtt_client = (MQTT_CLIENT_DATA_T*)arg;
-    if (status == MQTT_CONNECT_ACCEPTED) {
-        mqtt_sub_unsub(client, "/led", 0, NULL, arg, 1);
-        printf("Connected to the /led topic successfully\n");
-    }
 }
 
 int main()
@@ -131,11 +113,12 @@ int main()
     mqtt = (MQTT_CLIENT_DATA_T*)calloc(1, sizeof(MQTT_CLIENT_DATA_T));
     if (!mqtt) {
         printf("Failed to initialize MQTT client \n");
+        free(mqtt);
         return 1;
     }
     // MQTT CLIENT INFO
     mqtt->mqtt_client_info.client_id = MQTT_CLIENT_ID;
-    mqtt->mqtt_client_info.keep_alive = 60; // Keep alive in secondi
+    mqtt->mqtt_client_info.keep_alive = 60; // Keep alive in seconds
 
     if (cyw43_arch_init()) {
         printf("Failed to initialize CYW43\n");
@@ -144,6 +127,7 @@ int main()
 
     cyw43_arch_enable_sta_mode();
     if (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 10000)) {
+        cyw43_arch_deinit();
         printf("Wi-Fi error\n");
         return 1;
     }
@@ -157,11 +141,13 @@ int main()
 
     mqtt->mqtt_client_inst = mqtt_client_new();
     if (!mqtt->mqtt_client_inst) {
+        mqtt_client_free(mqtt->mqtt_client_inst);
         printf("MQTT client instance creation error\n");
         return 1;
     }
 
     if (mqtt_client_connect(mqtt->mqtt_client_inst, &addr, PORT, mqtt_connection_cb, mqtt, &mqtt->mqtt_client_info) != ERR_OK) {
+        mqtt_client_free(mqtt->mqtt_client_inst);
         printf("MQTT broker connection error\n");
         return 1;
     }
@@ -193,7 +179,6 @@ int main()
         if(strlen(sequence) > 2 || strcmp(sequence, "11") == 0 || strcmp(sequence, "00") == 0 || timeoutCounter > timeoutBailCount) {
             sequence[0] = '\0'; // Reset sequence
         }
-
         // Check the sequence length for timeout logic
         if(strlen(sequence) == 1) {
             timeoutCounter++;
