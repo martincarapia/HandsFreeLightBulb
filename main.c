@@ -70,6 +70,15 @@ void init_all(){
     gpio_init(sensorOne[1]);
     gpio_set_dir(sensorOne[1], GPIO_IN);
 }
+/*! \brief Deinitialize everything needed */
+void deinit_all(){
+    gpio_deinit(sensorZero[0]);
+    gpio_deinit(sensorZero[1]);
+    gpio_deinit(sensorOne[0]);
+    gpio_deinit(sensorOne[1]);
+
+    cyw43_arch_deinit();
+}
 
 typedef struct {
     mqtt_client_t* mqtt_client_inst;
@@ -113,7 +122,6 @@ int main()
     mqtt = (MQTT_CLIENT_DATA_T*)calloc(1, sizeof(MQTT_CLIENT_DATA_T));
     if (!mqtt) {
         printf("Failed to initialize MQTT client \n");
-        free(mqtt);
         return 1;
     }
     // MQTT CLIENT INFO
@@ -121,13 +129,15 @@ int main()
     mqtt->mqtt_client_info.keep_alive = 60; // Keep alive in seconds
 
     if (cyw43_arch_init()) {
+        free(mqtt);
         printf("Failed to initialize CYW43\n");
         return 1;
     }
 
     cyw43_arch_enable_sta_mode();
     if (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 10000)) {
-        cyw43_arch_deinit();
+        free(mqtt);
+        deinit_all();
         printf("Wi-Fi error\n");
         return 1;
     }
@@ -135,19 +145,24 @@ int main()
 
     ip_addr_t addr;
     if (!ip4addr_aton(MQTT_BROKER_IP, &addr)) {
+        free(mqtt);
+        deinit_all();
         printf("MQTT ip Address not valid !\n");
         return 1;
     }
 
     mqtt->mqtt_client_inst = mqtt_client_new();
     if (!mqtt->mqtt_client_inst) {
-        mqtt_client_free(mqtt->mqtt_client_inst);
+        free(mqtt);
+        deinit_all();
         printf("MQTT client instance creation error\n");
         return 1;
     }
 
     if (mqtt_client_connect(mqtt->mqtt_client_inst, &addr, PORT, mqtt_connection_cb, mqtt, &mqtt->mqtt_client_info) != ERR_OK) {
         mqtt_client_free(mqtt->mqtt_client_inst);
+        free(mqtt);
+        deinit_all();
         printf("MQTT broker connection error\n");
         return 1;
     }
@@ -168,15 +183,11 @@ int main()
         }
         if(strcmp(sequence, "01") == 0) {
             publish_count(1);
-            sequence[0] = '\0'; // Reset sequence
-            sleep_ms(550);
         } else if(strcmp(sequence, "10") == 0) {
             publish_count(-1);
-            sequence[0] = '\0'; // Reset sequence
-            sleep_ms(550);
         }
         // Resets the sequence if it is invalid or timeouts
-        if(strlen(sequence) > 2 || strcmp(sequence, "11") == 0 || strcmp(sequence, "00") == 0 || timeoutCounter > timeoutBailCount) {
+        if(strlen(sequence) > 2 || strcmp(sequence, "11") == 0 || strcmp(sequence, "00") == 0 || timeoutCounter > timeoutBailCount || strcmp(sequence, "01") == 0 || strcmp(sequence, "10") == 0) {
             sequence[0] = '\0'; // Reset sequence
         }
         // Check the sequence length for timeout logic
@@ -188,6 +199,8 @@ int main()
         printf("Seq: %c %c ", sequence[0], sequence[1]);
         printf("Sensor0: %f Sensor1: %f\n", sensorZeroCurrent, sensorOneCurrent); 
     }
-
+    mqtt_client_free(mqtt->mqtt_client_inst);
+    free(mqtt);
+    deinit_all();
     return 0;
 }
